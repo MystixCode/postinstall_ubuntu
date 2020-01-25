@@ -1,0 +1,208 @@
+#!/bin/bash
+bold=`echo -en "\e[1m"`
+underline=`echo -en "\e[4m"`
+dim=`echo -en "\e[2m"`
+strickthrough=`echo -en "\e[9m"`
+blink=`echo -en "\e[5m"`
+reverse=`echo -en "\e[7m"`
+hidden=`echo -en "\e[8m"`
+normal=`echo -en "\e[0m"`
+black=`echo -en "\e[30m"`
+red=`echo -en "\e[31m"`
+green=`echo -en "\e[32m"`
+orange=`echo -en "\e[33m"`
+blue=`echo -en "\e[34m"`
+purple=`echo -en "\e[35m"`
+aqua=`echo -en "\e[36m"`
+gray=`echo -en "\e[37m"`
+darkgray=`echo -en "\e[90m"`
+lightred=`echo -en "\e[91m"`
+lightgreen=`echo -en "\e[92m"`
+lightyellow=`echo -en "\e[93m"`
+lightblue=`echo -en "\e[94m"`
+lightpurple=`echo -en "\e[95m"`
+lightaqua=`echo -en "\e[96m"`
+white=`echo -en "\e[97m"`
+default=`echo -en "\e[39m"`
+BLACK=`echo -en "\e[40m"`
+RED=`echo -en "\e[41m"`
+GREEN=`echo -en "\e[42m"`
+ORANGE=`echo -en "\e[43m"`
+BLUE=`echo -en "\e[44m"`
+PURPLE=`echo -en "\e[45m"`
+AQUA=`echo -en "\e[46m"`
+GRAY=`echo -en "\e[47m"`
+DARKGRAY=`echo -en "\e[100m"`
+LIGHTRED=`echo -en "\e[101m"`
+LIGHTGREEN=`echo -en "\e[102m"`
+LIGHTYELLOW=`echo -en "\e[103m"`
+LIGHTBLUE=`echo -en "\e[104m"`
+LIGHTPURPLE=`echo -en "\e[105m"`
+LIGHTAQUA=`echo -en "\e[106m"`
+WHITE=`echo -en "\e[107m"`
+DEFAULT=`echo -en "\e[49m"`
+clear
+echo "${bold}${underline}Ubuntu 19.10/20.04 - Installation and Configuration Script$normal"
+## update and install stuff ####################################################
+echo -n "${green}update and install software (y/n)? $normal"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+  sudo apt -qq update && sudo apt -qq upgrade -y && sudo apt -qq full-upgrade -y && sudo apt -qq autoremove -y
+  test=$(sudo apt -qq install dconf-editor gnome-tweaks keepass2 thunderbird obs-studio gimp libreoffice gufw steam krita psensor -y 2> /dev/null)
+  echo "${test##*$'\n'}"
+  sudo snap install discord && sudo snap install atom --classic && sudo snap install blender --classic
+  echo "${lightgreen}**Optional: Download Godot here** $normal"
+  echo "${blink}https://godotengine.org $normal"
+fi
+## Do release upgrade to newest maybe instable version? ########################
+echo -n "${green}Do release upgrade to newest maybe ${red}instable ${green} dev version (y/n)? $normal"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+  sudo do-release-upgrade -d
+fi
+## Change Background Image #####################################################
+echo -n "${green}Change Background Image (y/n)? $normal"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+  bgimage=$(zenity --file-selection)
+  filename=$(basename $bgimage)
+  newpath="${HOME}/Bilder/Hintergründe/$filename"
+  mkdir "${HOME}/Bilder/Hintergründe"
+  cp $bgimage $newpath #copy file to pictures/wallpapers
+  gsettings set org.gnome.desktop.background picture-uri "file://${newpath}"
+  gsettings set org.gnome.desktop.screensaver picture-uri "file://${newpath}"
+  newpathescaped=$(echo "$newpath" | sed 's/\//\\\//g' | sed 's/\./\\\./g')
+  sudo sed -i -E ':begin;N;$!bbegin;s/(#lockDialogGroup\s\{\n\s*background:\s#[1-9a-z]{6}\surl\()(.*\..*)\);/\1file:\/\/'"$newpathescaped"'\);\n  background-position: 0 0;/gm' /usr/share/gnome-shell/theme/Yaru/gnome-shell.css
+fi
+## add favorite apps to dashboard ##############################################
+echo -n "${green}Change Favorite apps (y/n)? $normal"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+  gsettings set org.gnome.shell favorite-apps "['org.gnome.Terminal.desktop', 'org.gnome.Nautilus.desktop', 'firefox.desktop', 'thunderbird.desktop', 'keepass2.desktop', 'discord_discord.desktop', 'steam.desktop', 'atom_atom.desktop', 'blender_blender.desktop', 'gnome-control-center.desktop', 'org.gnome.tweaks.desktop', 'gufw.desktop', 'com.obsproject.Studio.desktop', 'org.gnome.Screenshot.desktop', 'gnome-system-monitor.desktop', 'psensor.desktop', 'org.kde.krita.desktop']"
+fi
+## create New Document template ################################################
+echo -n "${green}Create New Document template (y/n)? $normal"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+	cd ~/Vorlagen
+	touch "Neues Dokument"
+fi
+## Set Super+E (Windows+E) to open home directory ##############################
+echo -n "${green}Set Super+E (Windows+E) to open home directory (y/n)? $normal"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+	gsettings set org.gnome.settings-daemon.plugins.media-keys home "['<Super>e']"
+fi
+## Themeing ####################################################################
+echo -n "${green}Set Theming stuff (y/n)? $normal"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+  gsettings set org.gnome.desktop.interface clock-show-weekday "true"
+  gsettings set org.gnome.desktop.interface gtk-theme "Yaru-dark"
+  gsettings set org.gnome.desktop.calendar show-weekdate "true"
+  defaultTerminalProfile=$(gsettings get org.gnome.Terminal.ProfilesList default)
+  defaultTerminalProfile=${defaultTerminalProfile:1:-1} # remove leading and trailing single quotes
+  gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:$defaultTerminalProfile/ use-theme-colors "false"
+  gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:$defaultTerminalProfile/ use-theme-transparency "false"
+  gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:$defaultTerminalProfile/ use-transparent-background "true"
+  gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:$defaultTerminalProfile/ background-color "rgb(0,0,0)"
+  gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:$defaultTerminalProfile/ background-transparency-percent 12
+  gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:$defaultTerminalProfile/ foreground-color "rgb(233,84,32)"
+fi
+## privacy settings ############################################################
+echo -n "${green}Set privacy settings (y/n)? $normal"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+  gsettings set org.gnome.desktop.privacy remember-recent-files "false"
+  gsettings set org.gnome.desktop.privacy remove-old-temp-files "true"
+  gsettings set org.gnome.desktop.privacy remove-old-trash-files "true"
+  gsettings set org.gnome.desktop.privacy report-technical-problems "false"
+  gsettings set org.gnome.desktop.privacy old-files-age 30
+  gsettings set org.gnome.system.location enabled "false"
+fi
+## blank screen & standby never ################################################
+echo -n "${green}Set blank screen and standby to never (y/n)? $normal"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+  gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type "nothing"
+  gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 3600
+  gsettings set org.gnome.desktop.session idle-delay 0
+fi
+## Only 1 workspace ############################################################
+echo -n "${green}Set workspaces to 1 (y/n)? $normal"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+  gsettings set org.gnome.desktop.wm.preferences num-workspaces 1
+  gsettings set org.gnome.mutter dynamic-workspaces "false"
+fi
+## Disable home folder on desktop ##############################################
+echo -n "${green}Unset home folder on desktop (y/n)? $normal"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+  gsettings set org.gnome.shell enabled-extensions "['desktop-icons@csoriano']"
+  gsettings set org.gnome.shell.extensions.desktop-icons show-home "false"
+fi
+## install ublock origin addon for firefox #####################################
+echo -n "${green}install ublock origin addon for firefox (y/n)? $normal"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+  wget https://addons.mozilla.org/firefox/downloads/file/3452970/ublock_origin-latest.xpi && firefox *.xpi && rm *.xpi
+  read -p "${green}click in firefox auf addon ${red}erlauben ${green}und in privaten fenstern erlauben, then Press enter to continue$normal"
+fi
+## Install QEMU/KVM ############################################################
+echo -n "${green}Install QEMU/KVM and create network bridge(y/n)? $normal"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+  if [[ $(egrep -c '(vmx|svm)' /proc/cpuinfo) > 0 ]];then
+    echo "kvm supported and enabled in bios"
+    #install virtual environment
+    sudo apt -qq install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager
+    sudo adduser `id -un` kvm          #?not needed in ubuntu 20.04 anymore?
+    #Add to favourite
+    firstString=$(gsettings get org.gnome.shell favorite-apps)
+    secondString=", 'virt-manager.desktop']"
+    newString="${firstString/]/$secondString}"
+    gsettings set org.gnome.shell favorite-apps "$(echo $newString)"
+    #network bridge
+    echo -e "  network:
+      version: 2
+      renderer: networkd #NetworkManager
+
+      ethernets:
+        enp5s0:
+          dhcp4: false
+          dhcp6: false
+
+      bridges:
+        br0:
+          interfaces: [enp5s0]
+          dhcp4: true
+          dhcp6: false" | sudo tee '/etc/netplan/01-network-manager-all.yaml'
+    #sudo netplan try
+    sudo netplan apply
+  else
+    echo "${red}kvm not supported or not enabled in bios$normal"
+  fi
+fi
+## Summary #####################################################################
+echo "               ${red}.-.$normal"
+echo "         .-'\`\`${red}(   )$normal"
+echo "      ${lightyellow},\`\\ $normal\\    ${red}\`-\`$normal."
+echo "     ${lightyellow}/   \\ $normal'\`\`-.   \`   ${bold}${lightgreen}`lsb_release -s -d`$normal"
+echo "   ${lightyellow}.-.  ,       $normal\`___:  `uname -srmo`"
+echo "  ${lightyellow}(   ) :        ${red}___   $normal`date`"
+echo "   ${lightyellow}\`-\`  \`       ${red},   :"
+echo "     ${lightyellow}\\   / ${red},..-\`   ,"
+echo "      ${lightyellow}\`./ ${red}/    ${lightyellow}.-.${red}\`"
+echo "         \`-..-${lightyellow}(   )"
+echo "               ${lightyellow}\`-\`"
+echo -n "${green}Done... ${red}Reboot now (y/n) $normal?"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+  shutdown -r now
+fi
+## TODO: #######################################################################
+# firefox theme
+# firefox settings
+# firefox frontpage
+# bilder mehrfach usfüahra
