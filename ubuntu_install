@@ -47,10 +47,13 @@ echo "${bold}${underline}Ubuntu 19.10/20.04 - Installation and Configuration Scr
 echo -n "${green}update and install software (y/n)? $normal"
 read answer
 if [ "$answer" != "${answer#[Yy]}" ] ;then
+  sudo wget -qO - https://packagecloud.io/AtomEditor/atom/gpgkey | sudo apt-key add - #Add atom repository
+  sudo sh -c 'echo "deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main" > /etc/apt/sources.list.d/atom.list'
+
   sudo apt -qq update && sudo apt -qq upgrade -y && sudo apt -qq full-upgrade -y && sudo apt -qq autoremove -y
-  test=$(sudo apt -qq install dconf-editor gnome-tweaks keepass2 thunderbird obs-studio gimp libreoffice gufw steam krita psensor -y 2> /dev/null)
+  test=$(sudo apt -qq install dconf-editor gnome-tweaks keepass2 thunderbird obs-studio gimp libreoffice gufw steam krita blender atom -y 2> /dev/null)
   echo "${test##*$'\n'}"
-  sudo snap install discord && sudo snap install atom --classic && sudo snap install blender --classic
+  #sudo snap install discord && sudo snap install atom --classic && sudo snap install blender --classic
   echo "${lightgreen}**Optional: Download Godot here** $normal"
   echo "${blink}https://godotengine.org $normal"
 fi
@@ -78,14 +81,17 @@ fi
 echo -n "${green}Change Favorite apps (y/n)? $normal"
 read answer
 if [ "$answer" != "${answer#[Yy]}" ] ;then
-  gsettings set org.gnome.shell favorite-apps "['org.gnome.Terminal.desktop', 'org.gnome.Nautilus.desktop', 'firefox.desktop', 'thunderbird.desktop', 'keepass2.desktop', 'discord_discord.desktop', 'steam.desktop', 'atom_atom.desktop', 'blender_blender.desktop', 'gnome-control-center.desktop', 'org.gnome.tweaks.desktop', 'gufw.desktop', 'com.obsproject.Studio.desktop', 'org.gnome.Screenshot.desktop', 'gnome-system-monitor.desktop', 'psensor.desktop', 'org.kde.krita.desktop']"
+  gsettings set org.gnome.shell favorite-apps "['org.gnome.Terminal.desktop', 'org.gnome.Nautilus.desktop', 'firefox.desktop', 'thunderbird.desktop', 'keepass2.desktop', 'steam.desktop', 'atom_atom.desktop', 'blender_blender.desktop', 'gnome-control-center.desktop', 'org.gnome.tweaks.desktop', 'gufw.desktop', 'org.gnome.Screenshot.desktop', 'gnome-system-monitor.desktop', 'nm-connection-editor.desktop', 'ca.desrt.dconf-editor.desktop']"
 fi
 ## create New Document template ################################################
 echo -n "${green}Create New Document template (y/n)? $normal"
 read answer
 if [ "$answer" != "${answer#[Yy]}" ] ;then
-	cd ~/Vorlagen
-	touch "Neues Dokument"
+	cd ~/Templates
+	touch "New text document.txt"
+	echo "#!/usr/bin/env python3" > "New python script"
+	echo "#!/bin/bash" > "New bash script"
+
 fi
 ## Set Super+E (Windows+E) to open home directory ##############################
 echo -n "${green}Set Super+E (Windows+E) to open home directory (y/n)? $normal"
@@ -150,40 +156,48 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
   read -p "${green}click in firefox auf addon ${red}erlauben ${green}und in privaten fenstern erlauben, then Press enter to continue$normal"
 fi
 ## Install QEMU/KVM ############################################################
-echo -n "${green}Install QEMU/KVM and create network bridge(y/n)? $normal"
+echo -n "${green}Install QEMU/KVM(y/n)? $normal"
 read answer
 if [ "$answer" != "${answer#[Yy]}" ] ;then
   if [[ $(egrep -c '(vmx|svm)' /proc/cpuinfo) > 0 ]];then
     echo "kvm supported and enabled in bios"
     #install virtual environment
-    sudo apt -qq install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager
+    sudo apt -qq install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager -y
     sudo adduser `id -un` kvm          #?not needed in ubuntu 20.04 anymore?
     #Add to favourite
     firstString=$(gsettings get org.gnome.shell favorite-apps)
     secondString=", 'virt-manager.desktop']"
     newString="${firstString/]/$secondString}"
     gsettings set org.gnome.shell favorite-apps "$(echo $newString)"
-    #network bridge
-    echo -e "  network:
-      version: 2
-      renderer: networkd #NetworkManager
-
-      ethernets:
-        enp5s0:
-          dhcp4: false
-          dhcp6: false
-
-      bridges:
-        br0:
-          interfaces: [enp5s0]
-          dhcp4: true
-          dhcp6: false" | sudo tee '/etc/netplan/01-network-manager-all.yaml'
-    #sudo netplan try
-    sudo netplan apply
   else
     echo "${red}kvm not supported or not enabled in bios$normal"
   fi
 fi
+
+## Create network bridge for QEMU£/KVM #########################################
+echo -n "${green}create network bridge for QEMU/KVM(y/n)? $normal"
+read answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+  #network bridge
+  echo -e "  network:
+    version: 2
+    renderer: networkd #NetworkManager
+
+    ethernets:
+      enp5s0:
+        dhcp4: false
+        dhcp6: false
+
+    bridges:
+      br0:
+        interfaces: [enp5s0]
+        dhcp4: true
+        dhcp6: false" | sudo tee '/etc/netplan/01-network-manager-all.yaml'
+  #sudo netplan try
+  sudo netplan apply
+fi
+
+
 ## Summary #####################################################################
 echo "               ${red}.-.$normal"
 echo "         .-'\`\`${red}(   )$normal"
@@ -202,6 +216,10 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
   shutdown -r now
 fi
 ## TODO: #######################################################################
+# network bridge: interface variabel oder automatisch
+# ublock origin addon part doesnt work anymore.
+# review software list and favorites.
+# add yaru-colors
 # firefox theme
 # firefox settings
 # firefox frontpage
